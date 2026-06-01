@@ -11,7 +11,9 @@ import { WalkieTalkie } from './components/WalkieTalkie';
 import type { User, Driver, Ride, Location, AnalyticsSummary } from 'shared';
 import { UserSquare2, Car, ShieldAlert, MessageSquare, Compass, Radio } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api';
+const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 
+  (import.meta.env.DEV ? 'http://localhost:5000' : window.location.origin);
+const API_URL = `${GATEWAY_URL}/api`;
 
 export default function App() {
   // Master View Toggle: 'RIDE' | 'CHAT'

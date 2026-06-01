@@ -12,6 +12,9 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { KAFKA_TOPICS, EVENT_TYPES, Location } from 'shared';
 import EventBus from '../eventbus/eventbus.js';
 import AuthService from '../services/auth.service.js';
@@ -117,6 +120,23 @@ export function startGatewayServer(port: number) {
     }
     res.json(driver);
   });
+
+  // Serve static assets from frontend build directory in production if it exists
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const frontendBuildPath = path.resolve(__dirname, '../../../frontend/dist');
+
+  if (fs.existsSync(path.join(frontendBuildPath, 'index.html'))) {
+    console.log(`[Gateway] Production mode detected. Serving frontend from: ${frontendBuildPath}`);
+    app.use(express.static(frontendBuildPath));
+    app.get('*', (req, res, next) => {
+      // Let API requests fall through to 404 or original handlers
+      if (req.path.startsWith('/api')) {
+        return next();
+      }
+      res.sendFile(path.join(frontendBuildPath, 'index.html'));
+    });
+  }
 
   // ==========================================================================
   // WEBSOCKET LOGIC / EVENT ROOMS COORDINATOR

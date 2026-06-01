@@ -710,7 +710,7 @@ export function WalkieTalkie({ socket, defaultUsername = 'Operator' }: WalkieTal
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   const {
-    rooms, activeRoom, isTalking, isMuted, micGranted,
+    rooms, activeRoom, isTalking, isMuted,
     error, geoMeta, volumeLevels,
     fetchRooms, createRoom, joinRoom, leaveRoom,
     startTalking, stopTalking, toggleMute, clearError,

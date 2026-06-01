@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:5000';
+const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 
+  (import.meta.env.DEV ? 'http://localhost:5000' : window.location.origin);
 
 export function useSocket(role: 'PASSENGER' | 'DRIVER' | 'SYSTEM', id?: string) {
   const socketRef = useRef<Socket | null>(null);

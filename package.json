@@ -13,7 +13,9 @@
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "build:all": "npm run build --workspaces"
+    "build:all": "npm run build --workspaces",
+    "build": "npm run build:all",
+    "start": "node backend/dist/index.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
