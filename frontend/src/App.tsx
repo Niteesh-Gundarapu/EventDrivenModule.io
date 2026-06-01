@@ -9,7 +9,7 @@ import { UsernameModal } from './components/UsernameModal';
 import { ChatRoom } from './components/ChatRoom';
 import { WalkieTalkie } from './components/WalkieTalkie';
 import type { User, Driver, Ride, Location, AnalyticsSummary } from 'shared';
-import { UserSquare2, Car, ShieldAlert, MessageSquare, Compass, Radio } from 'lucide-react';
+import { UserSquare2, Car, ShieldAlert, MessageSquare, Compass, Radio, Globe } from 'lucide-react';
 
 const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 
   (import.meta.env.DEV ? 'http://localhost:5000' : window.location.origin);
@@ -399,9 +399,84 @@ export default function App() {
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 6px var(--accent-emerald)' }}></span>
-          <span className="nav-text">GATEWAY ACTIVE</span>
+        {/* Profile & Connection Info Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Geolocation/Connection Domain */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '4px 10px',
+            borderRadius: '6px',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-light)',
+            fontSize: '0.72rem',
+            color: 'var(--text-secondary)',
+            fontWeight: 600,
+          }}>
+            <Globe size={12} style={{ color: 'var(--accent-purple)' }} />
+            <span className="nav-text" style={{ fontFamily: 'var(--font-mono)' }}>
+              {window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? `local:${window.location.port || '3000'}` 
+                : window.location.hostname}
+            </span>
+          </div>
+
+          {/* Logged in profile status */}
+          {selectedUser ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              background: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.25)',
+              fontSize: '0.72rem',
+              color: 'var(--accent-gold)',
+              fontWeight: 700,
+            }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-gold)', boxShadow: '0 0 6px var(--accent-gold)' }}></span>
+              <span>PASSENGER: {selectedUser.name}</span>
+            </div>
+          ) : selectedDriver ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              background: 'rgba(34, 197, 94, 0.08)',
+              border: '1px solid rgba(34, 197, 94, 0.25)',
+              fontSize: '0.72rem',
+              color: 'var(--accent-emerald)',
+              fontWeight: 700,
+            }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 6px var(--accent-emerald)' }}></span>
+              <span>DRIVER: {selectedDriver.name}</span>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid var(--border-light)',
+              fontSize: '0.72rem',
+              color: 'var(--text-muted)',
+              fontWeight: 600,
+            }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--text-muted)' }}></span>
+              <span>NO ACTIVE PROFILE</span>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 6px var(--accent-emerald)' }}></span>
+            <span className="nav-text">GATEWAY ACTIVE</span>
+          </div>
         </div>
       </header>
 

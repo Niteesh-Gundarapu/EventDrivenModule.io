@@ -80,16 +80,16 @@ export function useWalkie(socket: Socket | null, username: string) {
   useEffect(() => {
     const fetchGeo = async () => {
       try {
-        const res = await fetch('https://ip-api.com/json/?fields=status,country,countryCode,city,lat,lon,query');
+        const res = await fetch('https://ipapi.co/json/');
         const data = await res.json();
-        if (data.status === 'success') {
+        if (data && data.ip) {
           setGeoMeta({
-            ip: data.query,
-            city: data.city,
-            country: data.country,
-            countryCode: data.countryCode,
-            lat: data.lat,
-            lng: data.lon,
+            ip: data.ip,
+            city: data.city || 'Local',
+            country: data.country_name || 'Network',
+            countryCode: data.country_code || 'LO',
+            lat: data.latitude || 0,
+            lng: data.longitude || 0,
           });
         } else {
           setGeoMeta({ ip: '127.0.0.1', city: 'Local', country: 'Network', countryCode: 'LO', lat: 0, lng: 0 });

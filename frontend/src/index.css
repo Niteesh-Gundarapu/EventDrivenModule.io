@@ -399,6 +399,20 @@ body {
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
+}
+
+/* Walkie Chat Sidebar */
+.walkie-chat-sidebar {
+  width: 300px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  background: rgba(13, 20, 38, 0.95);
+  backdrop-filter: blur(20px);
+  height: 100%;
+  z-index: 10;
+  box-shadow: -5px 0 25px rgba(0, 0, 0, 0.35);
 }
 
 /* Tablet & Smaller Screens Updates (max-width: 900px) */
@@ -463,6 +477,21 @@ body {
     width: 100% !important;
     border-left: none !important;
     border-top: 1px solid rgba(255,255,255,0.08) !important;
+  }
+
+  /* Overlay walkie talkie chat on mobile as absolute overlay drawer */
+  .walkie-chat-sidebar {
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 50 !important;
+    background: rgba(10, 15, 30, 0.98) !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(255,255,255,0.08) !important;
+    box-shadow: none !important;
   }
 }
 

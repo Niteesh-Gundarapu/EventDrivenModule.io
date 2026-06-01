@@ -763,16 +763,27 @@ export function WalkieTalkie({ socket, defaultUsername = 'Operator' }: WalkieTal
     }
   }, [activeRoom]);
 
-  // Persist: Auto-rejoin active voice room on reload once socket is ready
+  // Persist: Auto-rejoin active voice room on reload once socket and geoMeta are ready
   useEffect(() => {
     if (!socket || activeRoom) return;
 
     const savedRoomId = localStorage.getItem('walkie_active_room_id');
     if (savedRoomId) {
-      console.log('[Walkie:Restore] Reconnecting to voice room:', savedRoomId);
-      joinRoom(savedRoomId);
+      // Wait for geoMeta to load first (maximum 1.5 seconds fallback)
+      const timer = setTimeout(() => {
+        console.log('[Walkie:Restore] Reconnecting to voice room (timeout fallback):', savedRoomId);
+        joinRoom(savedRoomId);
+      }, 1500);
+
+      if (geoMeta) {
+        clearTimeout(timer);
+        console.log('[Walkie:Restore] Reconnecting to voice room with geoMeta:', savedRoomId);
+        joinRoom(savedRoomId);
+      }
+
+      return () => clearTimeout(timer);
     }
-  }, [socket, activeRoom, joinRoom]);
+  }, [socket, activeRoom, geoMeta, joinRoom]);
 
   const mySocketId = (socket as any)?.id || '';
 
@@ -1293,12 +1304,7 @@ export function WalkieTalkie({ socket, defaultUsername = 'Operator' }: WalkieTal
 
         {/* Chat sidebar (toggleable) */}
         {showChat && (
-          <div style={{
-            width: '280px', borderLeft: '1px solid rgba(255,255,255,0.08)',
-            display: 'flex', flexDirection: 'column',
-            background: 'rgba(255,255,255,0.02)',
-            animation: 'slideInRight 0.2s ease',
-          }}>
+          <div className="walkie-chat-sidebar" style={{ animation: 'slideInRight 0.2s ease' }}>
             <div style={{
               padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
