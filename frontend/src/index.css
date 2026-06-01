@@ -360,3 +360,122 @@ body {
   filter: brightness(1.08);
 }
 
+/* ============================================================
+   RESPONSIVE DESIGN SYSTEM ADDITIONS
+   ============================================================ */
+
+/* Main Header Customization */
+.app-header {
+  height: 60px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 25px;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+}
+
+/* Map Wrapper Panel */
+.map-wrapper-panel {
+  height: calc(100vh - 40px);
+  margin: 20px 10px;
+}
+
+/* Chat Room Container */
+.chat-room-container {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  height: calc(100vh - 100px);
+  margin: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05);
+  border: 1px solid var(--border-light);
+}
+
+/* Walkie Talkie Active View Body */
+.walkie-active-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Tablet & Smaller Screens Updates (max-width: 900px) */
+@media (max-width: 900px) {
+  .main-app-container {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 350px 1fr !important;
+    height: calc(100vh - 60px) !important;
+  }
+  
+  /* Place LiveMap at the top of the mobile screen */
+  .main-app-container section {
+    grid-row: 1 !important;
+    height: 100% !important;
+  }
+  
+  .main-app-container aside {
+    grid-row: 2 !important;
+    height: 100% !important;
+    border-right: none !important;
+    border-top: 1px solid var(--border-light) !important;
+  }
+
+  /* Make map wrapper flush against container edges on mobile */
+  .map-wrapper-panel {
+    height: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+}
+
+/* Mobile Screens Updates (max-width: 768px) */
+@media (max-width: 768px) {
+  /* Header scaling */
+  .app-header {
+    padding: 0 12px !important;
+    gap: 8px;
+  }
+
+  /* Header buttons padding */
+  .app-header button {
+    padding: 8px 12px !important;
+  }
+
+  /* Chat Room Responsiveness: Hide members list, maximize viewport space */
+  .chat-room-container {
+    grid-template-columns: 1fr !important;
+    margin: 10px !important;
+    height: calc(100vh - 80px) !important;
+  }
+  .chat-room-container aside {
+    display: none !important;
+  }
+
+  /* Walkie Talkie Active View layout stack */
+  .walkie-active-body {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+  }
+  .walkie-active-body > div {
+    width: 100% !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(255,255,255,0.08) !important;
+  }
+}
+
+/* Extra-small Mobile Viewports (max-width: 600px) */
+@media (max-width: 600px) {
+  /* Hide the text inside header tabs to fit all navigation buttons cleanly */
+  .nav-text {
+    display: none !important;
+  }
+  
+  /* Compact brand logo */
+  .app-header span {
+    font-size: 0.95rem !important;
+  }
+}
+

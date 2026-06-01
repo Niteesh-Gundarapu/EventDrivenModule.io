@@ -445,6 +445,25 @@ export function startGatewayServer(port: number) {
       leaveWalkieRoom(socket.id);
     });
 
+    // walkie:chat_message — broadcast text message to voice channel room participants
+    socket.on('walkie:chat_message', (data: { roomId: string; username: string; text: string }) => {
+      console.log(`[WalkieChat:Backend] Received message payload on socket ${socket.id}:`, data);
+      const { roomId, username, text } = data;
+      if (!roomId || !username || !text?.trim()) {
+        console.warn('[WalkieChat:Backend] Invalid chat payload. Ignoring.');
+        return;
+      }
+
+      const message = {
+        user: username,
+        text: text.trim(),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      console.log(`[WalkieChat:Backend] Broadcasting chat message to room walkie:${roomId}`);
+      io.to(`walkie:${roomId}`).emit('walkie:chat_message', message);
+    });
+
     // walkie:offer — forward WebRTC offer to target peer
     socket.on('walkie:offer', (data: { to: string; offer: RTCSessionDescriptionInit }) => {
       io.to(data.to).emit('walkie:offer', { from: socket.id, offer: data.offer });

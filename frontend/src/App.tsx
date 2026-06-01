@@ -46,24 +46,62 @@ export default function App() {
   // Establish Master System Socket connection to listen for all Kafka/Redis events
   const { emit, on, socket } = useSocket('SYSTEM');
 
-  // Fetch initial registry states
+  const handleSelectUser = (user: User) => {
+    setSelectedUser(user);
+    if (user) {
+      localStorage.setItem('rideconnect_user_id', user.id);
+    }
+  };
+
+  const handleSelectDriver = (driver: Driver) => {
+    setSelectedDriver(driver);
+    if (driver) {
+      localStorage.setItem('rideconnect_driver_id', driver.id);
+    }
+  };
+
+  // Fetch initial registry states with state persistence & ride recovery
   const fetchData = async () => {
     try {
       const usersRes = await fetch(`${API_URL}/users`);
       const usersData = await usersRes.json();
       setUsers(usersData);
-      if (usersData.length > 0 && !selectedUser) {
-        setSelectedUser(usersData[0]);
-      }
+      
+      // Persist: restore selected passenger
+      const savedUserId = localStorage.getItem('rideconnect_user_id');
+      const matchedUser = usersData.find((u: User) => u.id === savedUserId);
+      const activeUser = matchedUser || usersData[0] || null;
+      setSelectedUser(activeUser);
 
       const driversRes = await fetch(`${API_URL}/drivers`);
       const driversData = await driversRes.json();
       setDrivers(driversData);
-      if (driversData.length > 0 && !selectedDriver) {
-        setSelectedDriver(driversData[0]);
-      }
+      
+      // Persist: restore selected driver
+      const savedDriverId = localStorage.getItem('rideconnect_driver_id');
+      const matchedDriver = driversData.find((d: Driver) => d.id === savedDriverId);
+      const activeDriver = matchedDriver || driversData[0] || null;
+      setSelectedDriver(activeDriver);
 
       refreshMetrics();
+
+      // Persist: Fetch active rides to check if our passenger or driver has a running ride!
+      const ridesRes = await fetch(`${API_URL}/rides/active`);
+      const activeRides = await ridesRes.json();
+      
+      // Find if there is an active ride matching the current selected passenger or driver
+      if (activeUser || activeDriver) {
+        const matchedRide = activeRides.find((r: Ride) => 
+          (activeUser && r.passengerId === activeUser.id) || 
+          (activeDriver && r.driverId === activeDriver.id)
+        );
+        if (matchedRide) {
+          console.log('[App:Restore] Active ride restored from backend:', matchedRide.id);
+          setActiveRide(matchedRide);
+          setPickup(matchedRide.pickup);
+          setDestination(matchedRide.destination);
+        }
+      }
     } catch (err) {
       console.error('Error fetching backend registries:', err);
     }
@@ -82,6 +120,37 @@ export default function App() {
       console.error('Error fetching metrics:', err);
     }
   };
+
+  // Synchronize URL Hash with Tab selections
+  useEffect(() => {
+    const hash = window.location.hash;
+    const modeFromHash = hash === '#/chat' ? 'CHAT' : hash === '#/voice' ? 'WALKIE' : 'RIDE';
+    
+    // Only update if mismatch (prevents loops)
+    if (viewMode !== modeFromHash) {
+      window.location.hash = viewMode === 'CHAT' ? '/chat' : viewMode === 'WALKIE' ? '/voice' : '/ride';
+    }
+  }, [viewMode]);
+
+  // Listen to browser Back/Forward/deep-link hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#/chat') {
+        setViewMode('CHAT');
+      } else if (hash === '#/voice') {
+        setViewMode('WALKIE');
+      } else {
+        setViewMode('RIDE');
+      }
+    };
+    
+    // Set initial mode from URL hash on mount
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -250,19 +319,7 @@ export default function App() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       
       {/* Dynamic Navigation Header */}
-      <header 
-        style={{ 
-          height: '60px', 
-          background: '#ffffff', 
-          borderBottom: '1px solid var(--border-light)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '0 25px',
-          zIndex: 100,
-          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)'
-        }}
-      >
+      <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Compass className="pulse-glow" style={{ color: 'var(--accent-purple)' }} size={22} />
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800, letterSpacing: '1px', background: 'linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -292,7 +349,7 @@ export default function App() {
             }}
           >
             <Car size={16} style={{ color: viewMode === 'RIDE' ? 'var(--accent-purple)' : 'var(--text-muted)' }} />
-            RIDE OPERATIONS
+            <span className="nav-text">RIDE OPERATIONS</span>
           </button>
           
           <button
@@ -315,7 +372,7 @@ export default function App() {
             }}
           >
             <MessageSquare size={16} style={{ color: viewMode === 'CHAT' ? 'var(--accent-purple)' : 'var(--text-muted)' }} />
-            LIVE CHATROOM
+            <span className="nav-text">LIVE CHATROOM</span>
           </button>
 
           <button
@@ -338,13 +395,13 @@ export default function App() {
             }}
           >
             <Radio size={16} style={{ color: viewMode === 'WALKIE' ? '#06b6d4' : 'var(--text-muted)' }} />
-            VOICE HUB
+            <span className="nav-text">VOICE HUB</span>
           </button>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
           <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 6px var(--accent-emerald)' }}></span>
-          GATEWAY ACTIVE
+          <span className="nav-text">GATEWAY ACTIVE</span>
         </div>
       </header>
 
@@ -447,7 +504,7 @@ export default function App() {
                   <PassengerPanel
                     users={users}
                     selectedUser={selectedUser}
-                    onSelectUser={setSelectedUser}
+                    onSelectUser={handleSelectUser}
                     pickup={pickup}
                     destination={destination}
                     onSetSelectMode={setLocationSelectMode}
@@ -463,7 +520,7 @@ export default function App() {
                   <DriverPanel
                     drivers={drivers}
                     selectedDriver={selectedDriver}
-                    onSelectDriver={setSelectedDriver}
+                    onSelectDriver={handleSelectDriver}
                     onToggleStatus={handleToggleStatus}
                     activeRide={activeRide}
                     onAcceptRide={handleAcceptRide}

@@ -85,7 +85,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   const driverPt = activeRide?.driverLocation ? mapCoords(activeRide.driverLocation.lat, activeRide.driverLocation.lng) : null;
 
   return (
-    <div className="glass-panel scanline" style={{ height: 'calc(100vh - 40px)', margin: '20px 10px', position: 'relative', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div className="glass-panel scanline map-wrapper-panel" style={{ position: 'relative', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       
       {/* Header Info Overlay */}
       <div style={{ position: 'absolute', top: '15px', left: '15px', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '5px' }}>

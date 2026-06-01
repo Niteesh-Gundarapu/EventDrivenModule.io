@@ -733,6 +733,47 @@ export function WalkieTalkie({ socket, defaultUsername = 'Operator' }: WalkieTal
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [roomChat]);
 
+  // Listen for active voice channel socket text messages
+  useEffect(() => {
+    if (!socket || !activeRoom) {
+      setRoomChat([]);
+      return;
+    }
+
+    const onChatMessage = (msg: { user: string; text: string; time: string }) => {
+      console.log('[WalkieChat:Frontend] Received message from socket:', msg);
+      setRoomChat((prev) => [...prev, msg]);
+    };
+
+    console.log('[WalkieChat:Frontend] Registering walkie:chat_message socket listener for room:', activeRoom.id);
+    socket.on('walkie:chat_message', onChatMessage);
+
+    return () => {
+      console.log('[WalkieChat:Frontend] Cleaning up walkie:chat_message socket listener for room:', activeRoom.id);
+      socket.off('walkie:chat_message', onChatMessage);
+    };
+  }, [socket, activeRoom]);
+
+  // Persist: Save active voice room ID on join, and clear on leave
+  useEffect(() => {
+    if (activeRoom) {
+      localStorage.setItem('walkie_active_room_id', activeRoom.id);
+    } else {
+      localStorage.removeItem('walkie_active_room_id');
+    }
+  }, [activeRoom]);
+
+  // Persist: Auto-rejoin active voice room on reload once socket is ready
+  useEffect(() => {
+    if (!socket || activeRoom) return;
+
+    const savedRoomId = localStorage.getItem('walkie_active_room_id');
+    if (savedRoomId) {
+      console.log('[Walkie:Restore] Reconnecting to voice room:', savedRoomId);
+      joinRoom(savedRoomId);
+    }
+  }, [socket, activeRoom, joinRoom]);
+
   const mySocketId = (socket as any)?.id || '';
 
   const handleJoinRoom = (room: WalkieRoom) => {
@@ -744,8 +785,18 @@ export function WalkieTalkie({ socket, defaultUsername = 'Operator' }: WalkieTal
   };
 
   const sendRoomChat = () => {
-    if (!chatInput.trim()) return;
-    setRoomChat((prev) => [...prev, { user: username, text: chatInput.trim(), time: new Date().toLocaleTimeString() }]);
+    console.log('[WalkieChat:Frontend] sendRoomChat triggered. Input:', chatInput, 'Socket connected:', socket?.connected, 'ActiveRoom:', activeRoom?.id);
+    if (!chatInput.trim() || !socket || !activeRoom) {
+      console.warn('[WalkieChat:Frontend] Cancelled send. Missing inputs or socket.');
+      return;
+    }
+    
+    console.log('[WalkieChat:Frontend] Emitting walkie:chat_message event to backend');
+    socket.emit('walkie:chat_message', {
+      roomId: activeRoom.id,
+      username,
+      text: chatInput.trim(),
+    });
     setChatInput('');
   };
 
@@ -1006,7 +1057,12 @@ export function WalkieTalkie({ socket, defaultUsername = 'Operator' }: WalkieTal
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
-            onClick={() => setShowChat(!showChat)}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowChat((prev) => !prev);
+            }}
             style={{
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '8px 14px', borderRadius: '8px', border: 'none',
@@ -1019,7 +1075,12 @@ export function WalkieTalkie({ socket, defaultUsername = 'Operator' }: WalkieTal
             <MessageCircle size={14} /> CHAT
           </button>
           <button
-            onClick={leaveRoom}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              leaveRoom();
+            }}
             style={{
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '8px 14px', borderRadius: '8px', border: 'none',
@@ -1034,7 +1095,7 @@ export function WalkieTalkie({ socket, defaultUsername = 'Operator' }: WalkieTal
       </div>
 
       {/* Main body */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div className="walkie-active-body">
 
         {/* Left: PTT + Visualizer */}
         <div style={{

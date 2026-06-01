@@ -176,18 +176,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ username, socket, onSignOut 
   };
 
   return (
-    <div 
-      className="glass-panel main-app-container" 
-      style={{ 
-        display: 'grid',
-        gridTemplateColumns: '260px 1fr', 
-        height: 'calc(100vh - 100px)', 
-        margin: '20px', 
-        overflow: 'hidden',
-        boxShadow: '0 8px 30px rgba(15, 23, 42, 0.05)',
-        border: '1px solid var(--border-light)'
-      }}
-    >
+    <div className="glass-panel chat-room-container">
       
       {/* 1. Left Sidebar: Active online members (Slack/Steel Light style) */}
       <aside 

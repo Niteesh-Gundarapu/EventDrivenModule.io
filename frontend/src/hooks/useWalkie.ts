@@ -347,12 +347,24 @@ export function useWalkie(socket: Socket | null, username: string) {
     if (!activeRoom) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
+      // Ignore spacebar PTT when user is typing in chat inputs or textareas
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+
       if (e.code === 'Space' && !e.repeat && !pttActiveRef.current) {
         e.preventDefault();
         startTalking();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
+      // Ignore spacebar PTT when user is typing in chat inputs
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+
       if (e.code === 'Space') {
         e.preventDefault();
         stopTalking();
