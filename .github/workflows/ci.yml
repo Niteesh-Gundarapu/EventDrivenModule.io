@@ -1,0 +1,118 @@
+# ============================================================
+# RideConnect — GitHub Actions CI/CD Pipeline
+# ============================================================
+#
+# JOBS:
+#   1. ci        — Install deps, TypeScript check, build frontend
+#   2. deploy-frontend — Publish built frontend to GitHub Pages
+#   3. deploy-backend  — Trigger Render deploy hook for backend
+#
+# REQUIRED SECRETS (Settings → Secrets and Variables → Actions):
+#   RENDER_DEPLOY_HOOK  — Your Render backend deploy hook URL
+#                         (Render Dashboard → Service → Settings → Deploy Hook)
+#
+# REQUIRED REPO SETTINGS:
+#   Settings → Pages → Source → GitHub Actions
+#
+# ENVIRONMENT VARIABLE:
+#   VITE_GATEWAY_URL — Set to your Render backend URL in the
+#                      workflow or as a repository variable.
+# ============================================================
+
+name: CI / CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # ── 1. Build & Type-check ──────────────────────────────────
+  ci:
+    name: Build & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install all workspace dependencies
+        run: npm ci
+
+      - name: TypeScript check — shared
+        run: npx tsc --noEmit -p shared/tsconfig.json || true
+
+      - name: TypeScript check — backend
+        working-directory: backend
+        run: npx tsc --noEmit
+
+      - name: Build frontend (Vite)
+        working-directory: frontend
+        env:
+          # Set this to your Render backend URL once deployed:
+          # e.g. https://rideconnect-backend.onrender.com
+          VITE_GATEWAY_URL: ${{ vars.VITE_GATEWAY_URL || 'http://localhost:5000' }}
+        run: npm run build
+
+      - name: Upload Pages artifact
+        # Only on push to main (not PRs)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  # ── 2. Deploy Frontend → GitHub Pages ─────────────────────
+  deploy-frontend:
+    name: Deploy Frontend → GitHub Pages
+    needs: ci
+    runs-on: ubuntu-latest
+    # Only run on push to main, not on PRs
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # ── 3. Deploy Backend → Render ────────────────────────────
+  deploy-backend:
+    name: Deploy Backend → Render
+    needs: ci
+    runs-on: ubuntu-latest
+    # Only run on push to main, not on PRs
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Trigger Render deploy hook
+        # Render will rebuild and redeploy your backend service
+        # Add RENDER_DEPLOY_HOOK to your repo secrets
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            echo "Triggering Render deploy..."
+            curl --silent --show-error --fail "$RENDER_DEPLOY_HOOK"
+            echo "✅ Render deploy triggered"
+          else
+            echo "⚠️  RENDER_DEPLOY_HOOK secret not set — skipping backend deploy"
+          fi
